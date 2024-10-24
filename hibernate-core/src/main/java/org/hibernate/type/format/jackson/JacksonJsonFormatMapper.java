@@ -4,11 +4,16 @@
  */
 package org.hibernate.type.format.jackson;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import oracle.jdbc.provider.oson.JacksonOsonConverter;
+import org.hibernate.type.descriptor.WrapperOptions;
+import org.hibernate.type.descriptor.java.JavaType;
 import org.hibernate.type.format.AbstractJsonFormatMapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
@@ -34,7 +39,7 @@ public final class JacksonJsonFormatMapper extends AbstractJsonFormatMapper {
 		try {
 			return objectMapper.readValue( charSequence.toString(), objectMapper.constructType( type ) );
 		}
-		catch (JsonProcessingException e) {
+		catch (Exception e) {
 			throw new IllegalArgumentException( "Could not deserialize string to java type: " + type, e );
 		}
 	}
@@ -44,8 +49,40 @@ public final class JacksonJsonFormatMapper extends AbstractJsonFormatMapper {
 		try {
 			return objectMapper.writerFor( objectMapper.constructType( type ) ).writeValueAsString( value );
 		}
-		catch (JsonProcessingException e) {
+		catch (Exception e) {
 			throw new IllegalArgumentException( "Could not serialize object of java type: " + type, e );
 		}
+	}
+
+	@Override
+	public boolean supportsSourceType(Class<?> sourceType) {
+		return false;
+	}
+
+	@Override
+	public boolean supportsTargetType(Class<?> targetType) {
+		return false;
+	}
+
+	@Override
+	public <T> void writeToTarget(T value, JavaType<T> javaType, Object target, WrapperOptions options)
+			throws IOException {
+
+		ObjectMapper objectMapper = JacksonOsonConverter.getObjectMapper();
+
+
+		objectMapper.writerFor( objectMapper.constructType( javaType.getJavaType() ) ).writeValue( (JsonGenerator) target, value);
+
+	}
+
+	@Override
+	public <T> T readFromSource(JavaType<T> javaType, Object source, WrapperOptions options) throws IOException {
+		ObjectMapper objectMapper = JacksonOsonConverter.getObjectMapper();
+
+		JsonParser osonParser = objectMapper.getFactory().createParser( (byte[]) source );
+
+		T t = objectMapper.readValue( osonParser, objectMapper.constructType( javaType.getJavaType()) );
+
+		return t;
 	}
 }

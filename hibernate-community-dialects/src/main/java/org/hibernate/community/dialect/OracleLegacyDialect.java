@@ -918,8 +918,13 @@ public class OracleLegacyDialect extends Dialect {
 			typeContributions.contributeJdbcType( descriptor );
 
 			if ( getVersion().isSameOrAfter( 21 ) ) {
+				// if (drv  >= 23.6) {
+				//   typeContributions.contributeJdbcType( OracleOJsonJdbcType.INSTANCE );
+				//   typeContributions.contributeJdbcType( OracleOJsonArrayJdbcType.INSTANCE );
+				// } else {
 				typeContributions.contributeJdbcType( OracleJsonJdbcType.INSTANCE );
 				typeContributions.contributeJdbcType( OracleJsonArrayJdbcType.INSTANCE );
+				//}
 			}
 			else {
 				typeContributions.contributeJdbcType( OracleJsonBlobJdbcType.INSTANCE );

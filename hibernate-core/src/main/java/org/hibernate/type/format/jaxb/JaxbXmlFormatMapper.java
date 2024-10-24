@@ -437,6 +437,26 @@ public final class JaxbXmlFormatMapper implements FormatMapper {
 		}
 	}
 
+	@Override
+	public boolean supportsSourceType(Class<?> sourceType) {
+		return false;
+	}
+
+	@Override
+	public boolean supportsTargetType(Class<?> targetType) {
+		return false;
+	}
+
+	@Override
+	public <T> void writeToTarget(T value, JavaType<T> javaType, Object target, WrapperOptions options) {
+
+	}
+
+	@Override
+	public <T> T readFromSource(JavaType<T> javaType, Object source, WrapperOptions options) {
+		return null;
+	}
+
 	private JAXBElementTransformer createTransformer(
 			StringBuilderSqlAppender appender,
 			Class<?> elementClass,

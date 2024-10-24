@@ -106,6 +106,7 @@ public abstract class FormatMapperBasedJavaType<T> extends AbstractJavaType<T> i
 
 	@Override
 	public T deepCopy(T value) {
+
 		return value == null ? null : fromString( toString( value ) );
 	}
 

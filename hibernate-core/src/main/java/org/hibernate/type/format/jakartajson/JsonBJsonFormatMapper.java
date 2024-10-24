@@ -49,4 +49,16 @@ public final class JsonBJsonFormatMapper extends AbstractJsonFormatMapper {
 			throw new IllegalArgumentException( "Could not serialize object of java type: " + type, e );
 		}
 	}
+
+	@Override
+	public boolean supportsSourceType(Class<?> sourceType) {
+		return false;
+	}
+
+	@Override
+	public boolean supportsTargetType(Class<?> targetType) {
+		return false;
+	}
+
+
 }

@@ -19,7 +19,7 @@ public class OracleJsonArrayJdbcType extends OracleJsonArrayBlobJdbcType {
 	 */
 	public static final OracleJsonArrayJdbcType INSTANCE = new OracleJsonArrayJdbcType();
 
-	private OracleJsonArrayJdbcType() {
+	protected OracleJsonArrayJdbcType() {
 	}
 
 	@Override
