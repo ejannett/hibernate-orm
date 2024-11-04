@@ -98,6 +98,7 @@ import org.hibernate.type.descriptor.sql.internal.DdlTypeImpl;
 import org.hibernate.type.descriptor.sql.internal.NamedNativeEnumDdlTypeImpl;
 import org.hibernate.type.descriptor.sql.internal.NamedNativeOrdinalEnumDdlTypeImpl;
 import org.hibernate.type.descriptor.sql.spi.DdlTypeRegistry;
+import org.hibernate.type.format.jackson.JacksonIntegration;
 import org.hibernate.type.spi.TypeConfiguration;
 
 import jakarta.persistence.GenerationType;
@@ -994,10 +995,14 @@ public class OracleDialect extends Dialect {
 		typeContributions.contributeJdbcType( preferLong ? BlobJdbcType.PRIMITIVE_ARRAY_BINDING : BlobJdbcType.DEFAULT );
 
 		if ( getVersion().isSameOrAfter( 21 ) ) {
-			//typeContributions.contributeJdbcType( OracleJsonJdbcType.INSTANCE );
-			typeContributions.contributeJdbcType( OracleOsonJacksonJdbcType.INSTANCE );
-			//typeContributions.contributeJdbcType( OracleJsonArrayJdbcType.INSTANCE );
-			typeContributions.contributeJdbcType( OracleOsonJacksonArrayJdbcType.INSTANCE );
+			if ( JacksonIntegration.isOracleOsonExtensionAvailable() ) {
+				typeContributions.contributeJdbcType( OracleOsonJacksonJdbcType.INSTANCE );
+				typeContributions.contributeJdbcType( OracleOsonJacksonArrayJdbcType.INSTANCE );
+			}
+			else {
+				typeContributions.contributeJdbcType( OracleJsonJdbcType.INSTANCE );
+				typeContributions.contributeJdbcType( OracleJsonArrayJdbcType.INSTANCE );
+			}
 		}
 		else {
 			typeContributions.contributeJdbcType( OracleJsonBlobJdbcType.INSTANCE );

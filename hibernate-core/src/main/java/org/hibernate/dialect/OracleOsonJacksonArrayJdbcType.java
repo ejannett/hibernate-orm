@@ -24,6 +24,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * @author Emmanuel Jannetti
+ */
 public class OracleOsonJacksonArrayJdbcType extends OracleJsonArrayJdbcType {
 	/**
 	 * Singleton access
@@ -34,10 +37,6 @@ public class OracleOsonJacksonArrayJdbcType extends OracleJsonArrayJdbcType {
 		super();
 	}
 
-//	@Override
-//	public int getJdbcTypeCode() {
-//		return SqlTypes.JSON_ARRAY;
-//	}
 
 	@Override
 	public String toString() {

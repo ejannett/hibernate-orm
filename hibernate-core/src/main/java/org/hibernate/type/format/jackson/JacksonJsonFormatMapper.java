@@ -6,7 +6,6 @@ package org.hibernate.type.format.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import oracle.jdbc.provider.oson.JacksonOsonConverter;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaType;
 import org.hibernate.type.format.AbstractJsonFormatMapper;
@@ -68,16 +67,12 @@ public final class JacksonJsonFormatMapper extends AbstractJsonFormatMapper {
 	public <T> void writeToTarget(T value, JavaType<T> javaType, Object target, WrapperOptions options)
 			throws IOException {
 
-		ObjectMapper objectMapper = JacksonOsonConverter.getObjectMapper();
-
-
 		objectMapper.writerFor( objectMapper.constructType( javaType.getJavaType() ) ).writeValue( (JsonGenerator) target, value);
 
 	}
 
 	@Override
 	public <T> T readFromSource(JavaType<T> javaType, Object source, WrapperOptions options) throws IOException {
-		ObjectMapper objectMapper = JacksonOsonConverter.getObjectMapper();
 
 		JsonParser osonParser = objectMapper.getFactory().createParser( (byte[]) source );
 

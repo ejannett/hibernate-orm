@@ -6,11 +6,9 @@ package org.hibernate.dialect;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import oracle.jdbc.provider.oson.JacksonOsonConverter;
 import oracle.sql.json.OracleJsonDatum;
 import org.hibernate.metamodel.mapping.EmbeddableMappingType;
 import org.hibernate.metamodel.spi.RuntimeModelCreationContext;
-import org.hibernate.type.SqlTypes;
 import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
@@ -19,24 +17,39 @@ import org.hibernate.type.descriptor.jdbc.AggregateJdbcType;
 import org.hibernate.type.descriptor.jdbc.BasicBinder;
 import org.hibernate.type.descriptor.jdbc.BasicExtractor;
 import org.hibernate.type.format.FormatMapper;
+import org.hibernate.type.format.jackson.JacksonJsonFormatMapper;
 
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * @author Emmanuel Jannetti
+ */
 public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 	public static final OracleOsonJacksonJdbcType INSTANCE = new OracleOsonJacksonJdbcType( null );
+	private static Method jacksonOsonObjectMapperGetter = null;
 
+	static {
+		try {
+			Class jacksonOsonConverter = OracleOsonJacksonJdbcType.class.getClassLoader().loadClass( "oracle.jdbc.provider.oson.JacksonOsonConverter" );
+			jacksonOsonObjectMapperGetter = jacksonOsonConverter.getMethod( "getObjectMapper" );
+		}
+		catch (ClassNotFoundException | LinkageError | NoSuchMethodException e) {
+			// should not happen as OracleOsonJacksonJdbcType is loaded
+			// only when Oracle OSON JDBC extension is present
+			// see OracleDialect class.
+			throw new ExceptionInInitializerError( "OracleOsonJacksonJdbcType class loaded without OSON extension: " + e.getClass()+" "+ e.getMessage());
+		}
+	}
 	private OracleOsonJacksonJdbcType(EmbeddableMappingType embeddableMappingType) {
 		super( embeddableMappingType );
-	}
-
-	public int getJdbcTypeCode() {
-		return SqlTypes.JSON;
 	}
 
 	@Override
@@ -54,14 +67,33 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 
 	@Override
 	public <X> ValueBinder<X> getBinder(JavaType<X> javaType) {
-		return new BasicBinder<>( javaType, this ) {
 
-			final ObjectMapper objectMapper = JacksonOsonConverter.getObjectMapper();
+		final ObjectMapper objectMapper;
+		try {
+			objectMapper = (ObjectMapper) jacksonOsonObjectMapperGetter.invoke( null );
+		}
+		catch (IllegalAccessException | InvocationTargetException e) {
+			// should not happen
+			throw new RuntimeException("Can't retrieve ObjectMapper from OSON extension", e );
+		}
+
+		return new BasicBinder<>( javaType, this ) {
 
 
 			private <X> InputStream toOson(X value, JavaType<X> javaType, WrapperOptions options) throws Exception {
-				FormatMapper mapper = options.getSession().getSessionFactory().getFastSessionServices()
-						.getJsonFormatMapper();
+
+				// TODO : find programatic way to know that JSONB is used
+				FormatMapper fm = options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
+				FormatMapper mapper;
+				if ( JacksonJsonFormatMapper.class.isAssignableFrom(fm.getClass() )  )  {
+					// TODO : We should rely on
+					//        options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
+					//     But this do not let use inject our ObjectMapper. For now create our own instance
+					mapper = new JacksonJsonFormatMapper(objectMapper);
+				}
+				else {
+					mapper = fm;
+				}
 
 				PipedOutputStream out = new PipedOutputStream();
 				PipedInputStream in = new PipedInputStream(out);
@@ -85,7 +117,6 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 			@Override
 			protected void doBind(CallableStatement st, X value, String name, WrapperOptions options)
 					throws SQLException {
-
 				try {
 					st.setBinaryStream( name, toOson( value, getJavaType(), options ) );
 				}
@@ -99,6 +130,14 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 	@Override
 	public <X> ValueExtractor<X> getExtractor(JavaType<X> javaType) {
 
+		final ObjectMapper objectMapper;
+		try {
+			objectMapper = (ObjectMapper) jacksonOsonObjectMapperGetter.invoke( null );
+		}
+		catch (IllegalAccessException | InvocationTargetException e) {
+			// should not happen
+			throw new RuntimeException("Can't retrieve ObjectMapper from OSON extension", e );
+		}
 
 		return new BasicExtractor<>( javaType, this ) {
 
@@ -109,8 +148,18 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 			@Override
 			protected X doExtract(ResultSet rs, int paramIndex, WrapperOptions options) throws SQLException {
 
-				FormatMapper mapper = options.getSession().getSessionFactory().getFastSessionServices()
-						.getJsonFormatMapper();
+				// TODO : find programatic way to know that JSONB is used
+				FormatMapper fm = options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
+				FormatMapper mapper;
+				if ( JacksonJsonFormatMapper.class.isAssignableFrom(fm.getClass() )  )  {
+					// TODO : We should rely on
+					//        options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
+					//     But this do not let use inject our ObjectMapper. For now create our own instance
+					mapper = new JacksonJsonFormatMapper(objectMapper);
+				}
+				else {
+					mapper = fm;
+				}
 
 				OracleJsonDatum ojd = rs.getObject( paramIndex, OracleJsonDatum.class );
 				if ( ojd == null ) {
