@@ -988,14 +988,19 @@ public class OracleDialect extends Dialect {
 			typeContributions.contributeJdbcType( OracleReflectionStructJdbcType.INSTANCE );
 		}
 
+		final ConfigurationService configService = serviceRegistry.requireService( ConfigurationService.class );
+
 		// account for Oracle's deprecated support for LONGVARBINARY
 		// prefer BLOB, unless the user explicitly opts out
-		final boolean preferLong = serviceRegistry.requireService( ConfigurationService.class )
-				.getSetting( PREFER_LONG_RAW, StandardConverters.BOOLEAN, false );
+		final boolean preferLong = configService.getSetting( PREFER_LONG_RAW, StandardConverters.BOOLEAN, false );
 		typeContributions.contributeJdbcType( preferLong ? BlobJdbcType.PRIMITIVE_ARRAY_BINDING : BlobJdbcType.DEFAULT );
 
+		final String mapperName = configService.getSetting( "hibernate.type.json_format_mapper",
+				StandardConverters.STRING,"jackson" );
+
 		if ( getVersion().isSameOrAfter( 21 ) ) {
-			if ( JacksonIntegration.isOracleOsonExtensionAvailable() ) {
+			if ( JacksonIntegration.isOracleOsonExtensionAvailable() && "jackson".equalsIgnoreCase( mapperName )) {
+				// We must check that that extension is available and actually used.
 				typeContributions.contributeJdbcType( OracleOsonJacksonJdbcType.INSTANCE );
 				typeContributions.contributeJdbcType( OracleOsonJacksonArrayJdbcType.INSTANCE );
 			}
