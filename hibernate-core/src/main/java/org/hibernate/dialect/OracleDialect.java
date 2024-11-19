@@ -103,6 +103,7 @@ import org.hibernate.type.spi.TypeConfiguration;
 
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.TemporalType;
+import org.jboss.logging.Logger;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static org.hibernate.LockOptions.NO_WAIT;
@@ -111,6 +112,7 @@ import static org.hibernate.LockOptions.WAIT_FOREVER;
 import static org.hibernate.cfg.AvailableSettings.BATCH_VERSIONED_DATA;
 import static org.hibernate.cfg.DialectSpecificSettings.ORACLE_EXTENDED_STRING_SIZE;
 import static org.hibernate.cfg.DialectSpecificSettings.ORACLE_AUTONOMOUS_DATABASE;
+import static org.hibernate.dialect.DialectLogging.DIALECT_MESSAGE_LOGGER;
 import static org.hibernate.dialect.OracleJdbcHelper.getArrayJdbcTypeConstructor;
 import static org.hibernate.dialect.OracleJdbcHelper.getNestedTableJdbcTypeConstructor;
 import static org.hibernate.exception.spi.TemplatedViolatedConstraintNameExtractor.extractUsingTemplate;
@@ -182,6 +184,8 @@ public class OracleDialect extends Dialect {
 	private static final String ADD_MONTH_EXPRESSION = String.format( yqmSelect, "?2", "?3" );
 
 	private static final DatabaseVersion MINIMUM_VERSION = DatabaseVersion.make( 19 );
+
+	private static final String JACKSON_MAPPER_NAME = "jackson";
 
 	private final OracleUserDefinedTypeExporter userDefinedTypeExporter = new OracleUserDefinedTypeExporter( this );
 	private final UniqueDelegate uniqueDelegate = new CreateTableUniqueDelegate(this);
@@ -996,15 +1000,26 @@ public class OracleDialect extends Dialect {
 		typeContributions.contributeJdbcType( preferLong ? BlobJdbcType.PRIMITIVE_ARRAY_BINDING : BlobJdbcType.DEFAULT );
 
 		final String mapperName = configService.getSetting( "hibernate.type.json_format_mapper",
-				StandardConverters.STRING,"jackson" );
+				StandardConverters.STRING,JACKSON_MAPPER_NAME);
 
 		if ( getVersion().isSameOrAfter( 21 ) ) {
-			if ( JacksonIntegration.isOracleOsonExtensionAvailable() && "jackson".equalsIgnoreCase( mapperName )) {
+			if ( JacksonIntegration.isOracleOsonExtensionAvailable() && JACKSON_MAPPER_NAME.equalsIgnoreCase( mapperName )) {
 				// We must check that that extension is available and actually used.
 				typeContributions.contributeJdbcType( OracleOsonJacksonJdbcType.INSTANCE );
 				typeContributions.contributeJdbcType( OracleOsonJacksonArrayJdbcType.INSTANCE );
+				DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.log( Logger.Level.DEBUG,
+						"Oracle OSON Jackson extension used" );
 			}
 			else {
+				if (DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.isDebugEnabled()) {
+					DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.log( Logger.Level.DEBUG,
+							"Oracle OSON Jackson extension not used" );
+					DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.log( Logger.Level.DEBUG,
+							"JacksonIntegration.isOracleOsonExtensionAvailable(): " +
+									JacksonIntegration.isOracleOsonExtensionAvailable());
+					DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.log( Logger.Level.DEBUG,
+							"hibernate.type.json_format_mapper : " + mapperName);
+				}
 				typeContributions.contributeJdbcType( OracleJsonJdbcType.INSTANCE );
 				typeContributions.contributeJdbcType( OracleJsonArrayJdbcType.INSTANCE );
 			}

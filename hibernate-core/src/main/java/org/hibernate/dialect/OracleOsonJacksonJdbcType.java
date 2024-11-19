@@ -26,7 +26,6 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -85,7 +84,6 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 
 			private <X> InputStream toOson(X value, JavaType<X> javaType, WrapperOptions options) throws Exception {
 
-
 				// TODO : We should rely on
 				//       FormatMapper fm = options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
 				//
@@ -104,15 +102,7 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 			protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options)
 					throws SQLException {
 				try {
-					if (getEmbeddableMappingType() != null) {
-//						st.setBinaryStream( index,
-//								toOson( value, getEmbeddableMappingType(), options ) );
-						// TODO : refactor with super class
-						st.setBytes( index, JsonHelper.toString( getEmbeddableMappingType(), value, options ).getBytes( StandardCharsets.UTF_8 ) );
-					}
-					else {
-						st.setBinaryStream( index, toOson( value, getJavaType(), options ) );
-					}
+					st.setBinaryStream( index, toOson( value, getJavaType(), options ) );
 				}
 				catch (Exception e) {
 					throw new SQLException( e );
@@ -123,15 +113,7 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 			protected void doBind(CallableStatement st, X value, String name, WrapperOptions options)
 					throws SQLException {
 				try {
-					if (getEmbeddableMappingType() != null) {
-//						st.setBinaryStream( index,
-//								toOson( value, getEmbeddableMappingType(), options ) );
-						// TODO : refactor with super class
-						st.setBytes( name, JsonHelper.toString( getEmbeddableMappingType(), value, options ).getBytes( StandardCharsets.UTF_8 ) );
-					}
-					else {
-						st.setBinaryStream( name, toOson( value, getJavaType(), options ) );
-					}
+					st.setBinaryStream( name, toOson( value, getJavaType(), options ) );
 				}
 				catch (Exception e) {
 					throw new SQLException( e );
@@ -158,13 +140,8 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 				Object [] resultArray = new Object[jdbcValueCount];
 				for (int i = 0; i < jdbcValueCount; i++) {
 					SelectableMapping selectableMapping = mappingType.getSelectable( i );
-					//Getter getter=((BasicAttributeMapping) selectableMapping).getPropertyAccess().getGetter();
 					Object value = ((BasicAttributeMapping) selectableMapping).getPropertyAccess().getGetter().get( embeddable );
 					resultArray[i] = value;
-					//resultArray[i] = selectableMapping.getJdbcMapping().getJdbcJavaType().wrap( value ,options);
-//					if (selectableMapping.getJdbcMapping().getJdbcType().isTemporal()) {
-//						resultArray[i] = selectableMapping.getJdbcMapping().getJdbcJavaType().wrap( value ,options);
-//					}
 					if (selectableMapping.getJdbcMapping().getValueConverter() != null) {
 						resultArray[i] = selectableMapping.getJdbcMapping().getValueConverter().toRelationalValue( value );
 					}
@@ -173,32 +150,18 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 				return (X) resultArray;
 			}
 			private X fromOson(byte[] osonBytes, FormatMapper mapper, WrapperOptions options) throws Exception {
-//				if (getEmbeddableMappingType() != null) {
-//					X result = (X) mapper.readFromSource(  getEmbeddableMappingType().getJavaType(), osonBytes, options);
-//					if (getJavaType().getJavaTypeClass() != Object[].class) {
-//						return result;
-//					}
-//					return toObjectArray(getEmbeddableMappingType(),result,options);
-//				}
+				if (getEmbeddableMappingType() != null) {
+					X result = (X) mapper.readFromSource(  getEmbeddableMappingType().getJavaType(), osonBytes, options);
+					if (getJavaType().getJavaTypeClass() != Object[].class) {
+						return result;
+					}
+					return toObjectArray(getEmbeddableMappingType(),result,options);
+				}
 				return mapper.readFromSource(  getJavaType(), osonBytes, options);
 			}
 
 			@Override
 			protected X doExtract(ResultSet rs, int paramIndex, WrapperOptions options) throws SQLException {
-
-				if (getEmbeddableMappingType() != null) {
-					// we've bind a string , see doBind()
-					byte[] strBytes = rs.getBytes( paramIndex );
-					if (strBytes != null) {
-						return JsonHelper.fromString(
-								getEmbeddableMappingType(),
-								new String( strBytes, StandardCharsets.UTF_8 ),
-								getJavaType().getJavaTypeClass() != Object[].class,
-								options
-						);
-					}
-					return null;
-				}
 
 				// TODO : We should rely on
 				//       FormatMapper fm = options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
@@ -225,19 +188,6 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 			@Override
 			protected X doExtract(CallableStatement statement, int index, WrapperOptions options) throws SQLException {
 
-				if (getEmbeddableMappingType() != null) {
-					// we've bind a string , see doBind()
-					byte[] strBytes = statement.getBytes( index );
-					if (strBytes != null) {
-						return JsonHelper.fromString(
-								getEmbeddableMappingType(),
-								new String( strBytes, StandardCharsets.UTF_8 ),
-								getJavaType().getJavaTypeClass() != Object[].class,
-								options
-						);
-					}
-					return null;
-				}
 
 				// TODO : We should rely on
 				//       FormatMapper fm = options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
@@ -263,20 +213,6 @@ public class OracleOsonJacksonJdbcType extends OracleJsonJdbcType {
 			@Override
 			protected X doExtract(CallableStatement statement, String name, WrapperOptions options)
 					throws SQLException {
-
-				if (getEmbeddableMappingType() != null) {
-					byte[] strBytes = statement.getBytes( name );
-					if (strBytes != null) {
-						// we've bind a string , see doBind()
-						return JsonHelper.fromString(
-								getEmbeddableMappingType(),
-								new String( statement.getBytes( name ), StandardCharsets.UTF_8 ),
-								getJavaType().getJavaTypeClass() != Object[].class,
-								options
-						);
-					}
-					return null;
-				}
 
 				// TODO : We should rely on
 				//       FormatMapper fm = options.getSession().getSessionFactory().getFastSessionServices().getJsonFormatMapper();
