@@ -165,7 +165,7 @@ ext {
                         'jdbc.driver': 'oracle.jdbc.OracleDriver',
                         'jdbc.user'  : 'hibernate_orm_test',
                         'jdbc.pass'  : 'hibernate_orm_test',
-                        'jdbc.url'   : 'jdbc:oracle:thin:@tcp://phoenix104437.dev3sub3phx.databasede3phx.oraclevcn.com:5521/cdb1_pdb1.regress.rdbms.dev.us.oracle.com',
+                        'jdbc.url'   : 'jdbc:oracle:thin:@' + dbHost + ':1521/xepdb1',
                         'jdbc.datasource' : 'oracle.jdbc.OracleDriver',
 //                        'jdbc.datasource' : 'oracle.jdbc.datasource.impl.OracleDataSource',
                         'connection.init_sql' : ''
