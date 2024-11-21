@@ -5291,6 +5291,18 @@ public abstract class Dialect implements ConversionContext, TypeContributor, Fun
 	}
 
 	/**
+	 * Whether this Dialect supports jakarta Temporal annotation while
+	 * serialising or deserialising JSON
+	 *
+	 * @return {@code true} indicates it does; {@code false} indicates it does not
+	 *
+	 * @see org.hibernate.engine.jdbc.env.spi.ExtractedDatabaseMetaData#supportsRefCursors
+	 */
+	public Boolean getSupportsJakartaTemporalAnnotationInEmbeddable() {
+		return Boolean.TRUE;
+	}
+
+	/**
 	 * Pluggable strategy for determining the {@link Size} to use for
 	 * columns of a given SQL type.
 	 * <p>

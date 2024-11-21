@@ -44,7 +44,7 @@ public @interface RequiresDialectFeature {
 	String comment() default "";
 
 	/**
-	 * The key of a JIRA issue which relates this this feature requirement.
+	 * The key of a JIRA issue which relates this feature requirement.
 	 *
 	 * @return The jira issue key
 	 */

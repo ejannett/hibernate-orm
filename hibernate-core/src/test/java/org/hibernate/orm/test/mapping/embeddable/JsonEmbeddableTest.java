@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @RequiresDialectFeature(feature = DialectFeatureChecks.SupportsJsonAggregate.class)
+@RequiresDialectFeature(feature = DialectFeatureChecks.SupportsJakartaTemporalAnnotationInEmbeddable.class)
 public class JsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 
 	@Override

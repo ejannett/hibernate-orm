@@ -119,6 +119,13 @@ abstract public class DialectFeatureChecks {
 		}
 	}
 
+	public static class SupportsJakartaTemporalAnnotationInEmbeddable implements DialectFeatureCheck {
+		public boolean apply(Dialect dialect) {
+			return dialect.getSupportsJakartaTemporalAnnotationInEmbeddable();
+		}
+	}
+
+
 	public static class SupportsExpectedLobUsagePattern implements DialectFeatureCheck {
 		public boolean apply(Dialect dialect) {
 			return dialect.supportsExpectedLobUsagePattern();
