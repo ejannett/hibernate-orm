@@ -186,7 +186,7 @@ public class OracleDialect extends Dialect {
 	private static final DatabaseVersion MINIMUM_VERSION = DatabaseVersion.make( 19 );
 
 	private static final String JACKSON_MAPPER_NAME = "jackson";
-	private static boolean jakartaTemporalAnnotationInEmbeddableSupported = true;
+	private static boolean OracleOsonExtensionUsed = false;
 
 	private final OracleUserDefinedTypeExporter userDefinedTypeExporter = new OracleUserDefinedTypeExporter( this );
 	private final UniqueDelegate uniqueDelegate = new CreateTableUniqueDelegate(this);
@@ -1011,7 +1011,7 @@ public class OracleDialect extends Dialect {
 				DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.log( Logger.Level.DEBUG,
 						"Oracle OSON Jackson extension used" );
 				// as we speak this is not supported by OSON extension
-				jakartaTemporalAnnotationInEmbeddableSupported = false;
+				OracleOsonExtensionUsed = true;
 			}
 			else {
 				if (DIALECT_MESSAGE_LOGGER.DIALECT_LOGGER.isDebugEnabled()) {
@@ -1071,12 +1071,17 @@ public class OracleDialect extends Dialect {
 	}
 	@Override
 	public Boolean getSupportsJakartaTemporalAnnotationInEmbeddable() {
-		return jakartaTemporalAnnotationInEmbeddableSupported;
+		return OracleOsonExtensionUsed == false;
 	}
 
 	@Override
 	public AggregateSupport getAggregateSupport() {
-		return OracleAggregateSupport.valueOf( this );
+		if (OracleOsonExtensionUsed) {
+			return OracleAggregateSupport.valueOf( this, false );
+		}
+		else {
+			return OracleAggregateSupport.valueOf( this, true );
+		}
 	}
 
 	@Override

@@ -47,8 +47,6 @@ dependencies {
     compileOnly libs.jacksonXml
     compileOnly dbLibs.postgresql
 
-    implementation 'com.oracle.database.jdbc:ojdbc-provider-jackson-oson:1.0.1'
-
 //    annotationProcessor project( ":annotation-descriptor-generator" )
     compileOnly project( ":annotation-descriptor-generator" )
 
