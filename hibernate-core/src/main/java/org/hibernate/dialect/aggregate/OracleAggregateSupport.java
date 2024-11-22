@@ -210,11 +210,19 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 							case BINARY:
 							case VARBINARY:
 							case LONG32VARBINARY:
-								// We encode binary data as hex, so we have to decode here
-								return template.replace(
-										placeholder,
-										"hextoraw(json_value(" + parentPartExpression + columnExpression + "'))"
-								);
+								if (this.dateTypesStoreAsString) {
+									// We encode binary data as hex, so we have to decode here
+									return template.replace(
+											placeholder,
+											"hextoraw(json_value(" + parentPartExpression + columnExpression + "'))"
+									);
+								}
+								else {
+									return template.replace(
+											placeholder,
+											"json_value(" + parentPartExpression + columnExpression + "')"
+									);
+								}
 							case CLOB:
 							case NCLOB:
 							case BLOB:
