@@ -18,6 +18,7 @@ import org.hibernate.dialect.OracleArrayJdbcType;
 import org.hibernate.engine.jdbc.Size;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.mapping.AggregateColumn;
+import org.hibernate.mapping.BasicValue;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.UserDefinedArrayType;
 import org.hibernate.metamodel.mapping.EmbeddableMappingType;
@@ -155,24 +156,35 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 							case SMALLINT:
 							case INTEGER:
 							case BIGINT:
-								return template.replace(
-										placeholder,
-										"json_value(" + parentPartExpression + columnExpression + "' returning " + column.getTypeName() + ')'
-								);
+								if(column.getValue() instanceof BasicValue
+										&& (((BasicValue)column.getValue())
+										.getResolvedJavaType().getTypeName().equals("java.lang.Boolean"))) {
+									return template.replace(
+											placeholder,
+											"decode(json_value(" + parentPartExpression + columnExpression + "'),'true',1,'false',0,null)"
+									);
+								}
+								else {
+									return template.replace(
+											placeholder,
+											"json_value(" + parentPartExpression + columnExpression + "' returning " + column.getTypeName() + ')'
+									);
+								}
 							case DATE:
 								if (this.dateTypesStoreAsString) {
 									return template.replace(
 											placeholder,
-									"to_date(json_value(" + parentPartExpression + columnExpression + "'),'YYYY-MM-DD')"
+											"to_date(json_value(" + parentPartExpression + columnExpression + "'),'YYYY-MM-DD')"
 									);
 								}
 								else {
 									// Oracle OSON extension is used, value is not stored as string
 									return template.replace(
 											placeholder,
-											"json_value(" + parentPartExpression + columnExpression + "')"
+											"json_value(" + parentPartExpression + columnExpression + "' returning date)"
 									);
 								}
+
 							case TIME:
 								return template.replace(
 										placeholder,
@@ -186,10 +198,10 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 									);
 								}
 								else {
-									// Oracle OSON extension is used, value is not stored as string
+
 									return template.replace(
 											placeholder,
-											"json_value(" + parentPartExpression + columnExpression + "')"
+											"json_value(" + parentPartExpression + columnExpression + "' returning timestamp)"
 									);
 								}
 							case TIMESTAMP_WITH_TIMEZONE:
@@ -210,19 +222,14 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 							case BINARY:
 							case VARBINARY:
 							case LONG32VARBINARY:
-								if (this.dateTypesStoreAsString) {
-									// We encode binary data as hex, so we have to decode here
-									return template.replace(
-											placeholder,
-											"hextoraw(json_value(" + parentPartExpression + columnExpression + "'))"
-									);
-								}
-								else {
-									return template.replace(
-											placeholder,
-											"json_value(" + parentPartExpression + columnExpression + "')"
-									);
-								}
+								// We encode binary data as hex, so we have to decode here
+								return (this.dateTypesStoreAsString) ? template.replace(
+										placeholder,
+										"hextoraw(json_value(" + parentPartExpression + columnExpression + "'))"
+								):template.replace(
+										placeholder,
+										"json_value(" + parentPartExpression + columnExpression + "' returning raw)"
+								);
 							case CLOB:
 							case NCLOB:
 							case BLOB:
@@ -235,8 +242,13 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 								final BasicPluralType<?, ?> pluralType = (BasicPluralType<?, ?>) column.getValue().getType();
 								final OracleArrayJdbcType jdbcType = (OracleArrayJdbcType) pluralType.getJdbcType();
 								switch ( jdbcType.getElementJdbcType().getDefaultSqlTypeCode() ) {
-									case BOOLEAN:
+
 									case DATE:
+										return template.replace(
+												placeholder,
+												"json_value(" + parentPartExpression + columnExpression + "' returning " + column.getTypeName() + ')'
+										);
+									case BOOLEAN:
 									case TIME:
 									case TIMESTAMP:
 									case TIMESTAMP_WITH_TIMEZONE:
@@ -244,14 +256,10 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 									case BINARY:
 									case VARBINARY:
 									case LONG32VARBINARY:
-										return template.replace(
-												placeholder,
-												jdbcType.getSqlTypeName() + "_from_json(json_query(" + parentPartExpression + columnExpression + "' returning " + jsonTypeName + "))"
-										);
 									default:
 										return template.replace(
 												placeholder,
-												"json_value(" + parentPartExpression + columnExpression + "' returning " + column.getTypeName() + ')'
+												jdbcType.getSqlTypeName() + "_from_json(json_query(" + parentPartExpression + columnExpression + "' returning " + jsonTypeName + "))"
 										);
 								}
 							case JSON:
@@ -259,11 +267,20 @@ public class OracleAggregateSupport extends AggregateSupportImpl {
 										placeholder,
 										"json_query(" + parentPartExpression + columnExpression + "' returning " + jsonTypeName + ")"
 								);
-							default:
+							default: {
+								if ( column.getValue() instanceof BasicValue
+										&& (((BasicValue) column.getValue()).getResolvedJavaType().getTypeName()
+										.equals( "java.lang.Boolean" )) ) {
+									return template.replace(
+											placeholder,
+											"decode(json_value(" + parentPartExpression + columnExpression + "'),'true','Y','false','N',null)"
+									);
+								}
 								return template.replace(
 										placeholder,
 										"cast(json_value(" + parentPartExpression + columnExpression + "') as " + column.getTypeName() + ')'
 								);
+							}
 						}
 					case NONE:
 						throw new UnsupportedOperationException( "The Oracle version doesn't support JSON aggregates!" );
