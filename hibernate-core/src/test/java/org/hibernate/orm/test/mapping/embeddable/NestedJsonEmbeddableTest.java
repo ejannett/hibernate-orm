@@ -88,6 +88,7 @@ public class NestedJsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 
 	@Test
 	public void testFetch() {
+
 		sessionFactoryScope().inSession(
 				entityManager -> {
 					List<JsonHolder> jsonHolders = entityManager.createQuery( "from JsonHolder b where b.id = 1", JsonHolder.class ).getResultList();
@@ -464,6 +465,30 @@ public class NestedJsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 			this.simpleEmbeddable = simpleEmbeddable;
 			this.nested = nested;
 		}
+
+		public String getStringField() {
+			return stringField;
+		}
+
+		public SimpleEmbeddable getSimpleEmbeddable() {
+			return simpleEmbeddable;
+		}
+
+		public EmbeddableAggregate getNested() {
+			return nested;
+		}
+
+		public void setStringField(String stringField) {
+			this.stringField = stringField;
+		}
+
+		public void setSimpleEmbeddable(SimpleEmbeddable simpleEmbeddable) {
+			this.simpleEmbeddable = simpleEmbeddable;
+		}
+
+		public void setNested(EmbeddableAggregate nested) {
+			this.nested = nested;
+		}
 	}
 
 	@Embeddable
@@ -503,6 +528,15 @@ public class NestedJsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 			result = 31 * result + ( doubleNested != null ? doubleNested.hashCode() : 0 );
 			return result;
 		}
+
+		public Integer getIntegerField() {
+			return integerField;
+		}
+
+		public DoubleNested getDoubleNested() {
+			return doubleNested;
+		}
+
 	}
 
 	@Embeddable
@@ -535,6 +569,10 @@ public class NestedJsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 		public int hashCode() {
 			return theNested != null ? theNested.hashCode() : 0;
 		}
+
+		public Nested getTheNested() {
+			return theNested;
+		}
 	}
 
 	@Embeddable
@@ -561,6 +599,10 @@ public class NestedJsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 			Nested nested = (Nested) o;
 
 			return Objects.equals( theLeaf, nested.theLeaf );
+		}
+
+		public Leaf getTheLeaf() {
+			return theLeaf;
 		}
 
 		@Override
@@ -592,6 +634,10 @@ public class NestedJsonEmbeddableTest extends BaseSessionFactoryFunctionalTest {
 			Leaf leaf = (Leaf) o;
 
 			return Objects.equals( stringField, leaf.stringField );
+		}
+
+		public String getStringField() {
+			return stringField;
 		}
 
 		@Override
