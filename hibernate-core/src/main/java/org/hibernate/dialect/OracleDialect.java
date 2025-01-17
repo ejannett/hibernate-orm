@@ -1076,7 +1076,8 @@ public class OracleDialect extends Dialect {
 
 	@Override
 	public AggregateSupport getAggregateSupport() {
-		return OracleAggregateSupport.valueOf( this ,false);
+		return OracleAggregateSupport.valueOf( this ,
+				!JacksonIntegration.isOracleOsonExtensionAvailable());
 	}
 
 	@Override
